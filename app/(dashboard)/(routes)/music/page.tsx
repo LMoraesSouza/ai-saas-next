@@ -34,7 +34,7 @@ export default function MusicPage() {
         try {
             setMusic(undefined)
             const prompt = values.prompt 
-            const response = await axios.get('https://image.pollinations.ai/prompt/'+ )
+            const response = await axios.get('https://image.pollinations.ai/prompt/'+ prompt)
 
             console.log(response)
 
