@@ -4,6 +4,8 @@ import OpenAI from 'openai'
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { MessageProps } from '@/app/(dashboard)/(routes)/conversation/page';
 
+import { increaseApiLimit, checkApiLimit } from '@/lib/api-limit';
+
 const configuration = new OpenAI({
     apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
 });
@@ -28,6 +30,13 @@ export async function POST(
         if (!messages) {
             return new NextResponse("Messages are required", { status: 400 })
         }
+
+        const freeTrial = await checkApiLimit()
+
+        if (!freeTrial) {
+            return new NextResponse("Free trial has expired.", { status: 403 })
+        }
+
         const apiKey: string = process.env.GEMINI_API_KEY || 'whatever default'
 
         const genAI = new GoogleGenerativeAI(apiKey);
@@ -36,12 +45,14 @@ export async function POST(
         const promptTeste = messages.map((message: MessageProps) => { return message.role === 'user' ? `user: ${message.message}` : `chat: ${message.message}` })
 
         const result = await model.generateContent(promptTeste);
+
+        await increaseApiLimit()
+
         const returning = {
             role: 'chat',
             message: result.response.text()
         }
 
-        console.log(returning)
 
         return NextResponse.json(returning);
 
